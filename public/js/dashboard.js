@@ -142,34 +142,33 @@ document.getElementById('addPhotoForm').addEventListener('submit', async (e) => 
 
   const title = document.getElementById('photoTitle').value;
   const description = document.getElementById('photoDescription').value;
-  const photoFile = document.getElementById('photoFile').files[0];
+  const driveId = document.getElementById('driveId').value;
   const categoryId = document.getElementById('categoryId').value;
 
-  if (!title || !photoFile || !categoryId) {
+  if (!title || !driveId || !categoryId) {
     alert('Semua field harus diisi');
     return;
   }
-
-  const formData = new FormData();
-  formData.append('title', title);
-  formData.append('description', description);
-  formData.append('image', photoFile);
-  formData.append('categoryId', categoryId);
 
   try {
     const response = await fetch(`${API_URL}/photos`, {
       method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
-        // Note: Jangan set Content-Type untuk FormData, biar browser yang handle boundary nya
       },
-      body: formData
+      body: JSON.stringify({
+        title,
+        description,
+        driveId,
+        categoryId: parseInt(categoryId)
+      })
     });
 
     const result = await response.json();
 
     if (result.success) {
-      alert('Foto berhasil diunggah!');
+      alert('Foto berhasil ditambahkan!');
       document.getElementById('addPhotoForm').reset();
       loadPhotos();
     } else {
