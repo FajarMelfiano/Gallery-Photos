@@ -91,13 +91,15 @@ function displayPhotosTable(photos) {
   photos.forEach(photo => {
     const tr = document.createElement('tr');
     // Fallback untuk camelCase vs snake_case
-    const imageUrl = photo.imageUrl || photo.image_url;
-    const categoryName = photo.categoryName || 'Uncategorized';
+    const imageUrl = photo.imageUrl || photo.image_url || '';
+    const categoryName = photo.categoryName || photo.category_name || 'Uncategorized';
     const id = photo.id;
+
+    console.log('Rendering photo:', { id, imageUrl });
 
     tr.innerHTML = `
       <td>
-        <img src="${imageUrl}" alt="${photo.title}" style="width: 50px; height: 50px; border-radius: 0.5rem; object-fit: cover;">
+        <img src="${imageUrl}" alt="${photo.title}" style="width: 50px; height: 50px; border-radius: 0.5rem; object-fit: cover;" onerror="console.error('Image Load Fail:', '${imageUrl}')">
       </td>
       <td>${photo.title}</td>
       <td>${categoryName}</td>

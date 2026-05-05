@@ -45,7 +45,7 @@ function displayPhotos(photos) {
   const gallery = document.querySelector('.gallery');
   gallery.innerHTML = '';
 
-  if (photos.length === 0) {
+  if (!photos || photos.length === 0) {
     gallery.innerHTML = `
       <div class="empty-state" style="grid-column: 1/-1;">
         <div style="font-size: 3rem;">📷</div>
@@ -58,12 +58,12 @@ function displayPhotos(photos) {
 
   photos.forEach(photo => {
     const item = document.createElement('div');
-    const imageUrl = photo.imageUrl || photo.image_url;
-    const categoryName = photo.categoryName || 'Uncategorized';
+    const imageUrl = photo.imageUrl || photo.image_url || '';
+    const categoryName = photo.categoryName || photo.category_name || 'Uncategorized';
     
     item.className = 'gallery-item';
     item.innerHTML = `
-      <img src="${imageUrl}" alt="${photo.title}" loading="lazy">
+      <img src="${imageUrl}" alt="${photo.title}" loading="lazy" onerror="console.error('Gallery image load fail:', '${imageUrl}')">
       <div class="gallery-info">
         <h3 class="gallery-title">${photo.title}</h3>
         <span class="gallery-category">${categoryName}</span>
@@ -76,7 +76,7 @@ function displayPhotos(photos) {
 
 // Display categories
 function displayCategories(photos) {
-  const categories = new Set(photos.map(p => p.categoryId));
+  const categories = new Set(photos.map(p => p.categoryId || p.category_id));
   console.log('Categories loaded');
 }
 
@@ -92,7 +92,7 @@ function filterPhotos(categoryId, btn) {
         const filtered =
           categoryId === 'all'
             ? result.data
-            : result.data.filter(photo => photo.categoryId === categoryId);
+            : result.data.filter(photo => (photo.categoryId || photo.category_id) === categoryId);
         displayPhotos(filtered);
       }
     })
@@ -102,11 +102,11 @@ function filterPhotos(categoryId, btn) {
 // Open modal
 function openModal(photo) {
   const modal = document.getElementById('photoModal');
-  const imageUrl = photo.imageUrl || photo.image_url;
-  const categoryName = photo.categoryName || 'Uncategorized';
+  const imageUrl = photo.imageUrl || photo.image_url || '';
+  const categoryName = photo.categoryName || photo.category_name || 'Uncategorized';
   
   document.getElementById('modalImage').src = imageUrl;
-  document.getElementById('modalTitle').textContent = photo.title;
+  document.getElementById('modalTitle').textContent = photo.title || 'Tanpa Judul';
   document.getElementById('modalDescription').textContent = photo.description || 'Tidak ada deskripsi';
   document.getElementById('modalCategory').textContent = categoryName;
   modal.classList.add('active');
