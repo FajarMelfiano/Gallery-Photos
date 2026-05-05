@@ -1,5 +1,5 @@
 /* Admin Login Script */
-const API_URL = 'http://localhost:5000/api';
+const API_URL = '/api';
 
 const loginForm = document.getElementById('loginForm');
 const usernameInput = document.getElementById('username');

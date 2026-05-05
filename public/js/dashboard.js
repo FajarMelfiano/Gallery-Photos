@@ -1,5 +1,5 @@
 /* Admin Dashboard Script */
-const API_URL = 'http://localhost:5000/api';
+const API_URL = '/api';
 let token = localStorage.getItem('adminToken');
 
 // Redirect jika tidak ada token
