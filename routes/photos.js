@@ -1,8 +1,24 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
 const db = require('../data/supabase-db');
+const supabase = require('../config/supabase'); // Client backend untuk upload storage
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
+
+// Konfigurasi Multer (simpan di memory sementara)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // Limit 5MB
+  fileFilter: (req, file, cb) => {
+    const filetypes = /jpeg|jpg|png|webp/;
+    const mimetype = filetypes.test(file.mimetype);
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    if (mimetype && extname) return cb(null, true);
+    cb(new Error('Hanya file gambar (jpg, png, webp) yang diizinkan!'));
+  }
+});
 
 // GET semua foto (public)
 router.get('/', async (req, res) => {
@@ -29,61 +45,63 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET foto by ID (public)
-router.get('/:id', async (req, res) => {
+// POST tambah foto (admin only - WITH UPLOAD)
+router.post('/', authenticateToken, upload.single('image'), async (req, res) => {
   try {
-    const photo = await db.getPhotoById(parseInt(req.params.id));
-    if (!photo) {
-      return res.status(404).json({ success: false, message: 'Foto tidak ditemukan' });
-    }
-    res.status(200).json({ success: true, data: photo });
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-// POST tambah foto (admin only)
-router.post('/', authenticateToken, async (req, res) => {
-  try {
-    const { title, description, driveId, categoryId } = req.body;
+    const { title, description, categoryId } = req.body;
+    const file = req.file;
 
     // Validasi input
-    if (!title || !driveId || !categoryId) {
+    if (!title || !categoryId) {
       return res.status(400).json({
         success: false,
-        message: 'Title, driveId, dan categoryId diperlukan'
+        message: 'Title dan categoryId diperlukan'
       });
     }
 
-    // Validasi categoryId
-    const category = await db.getCategoryById(parseInt(categoryId));
-    if (!category) {
+    if (!file) {
       return res.status(400).json({
         success: false,
-        message: 'Kategori tidak ditemukan'
+        message: 'File gambar harus diunggah'
       });
     }
 
-    // Buat image URL dari driveId
-    // Format direct link (thumbnail/preview) yang lebih stabil
-    const imageUrl = `https://lh3.googleusercontent.com/u/0/d/${driveId}=w1000`;
+    // 1. Upload ke Supabase Storage
+    const fileName = `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`;
+    const { data: uploadData, error: uploadError } = await supabase
+      .storage
+      .from('photos')
+      .upload(fileName, file.buffer, {
+        contentType: file.mimetype,
+        upsert: false
+      });
 
+    if (uploadError) {
+      throw new Error(`Upload gagal: ${uploadError.message}`);
+    }
+
+    // 2. Dapatkan Public URL
+    const { data: { publicUrl } } = supabase
+      .storage
+      .from('photos')
+      .getPublicUrl(fileName);
+
+    // 3. Simpan ke Database
     const newPhoto = await db.addPhoto({
       title,
       description: description || '',
-      driveId,
-      imageUrl,
+      driveId: fileName, // Kita simpan fileName di driveId sebagai referensi
+      imageUrl: publicUrl,
       categoryId: parseInt(categoryId)
     });
 
     res.status(201).json({
       success: true,
-      message: 'Foto berhasil ditambahkan',
+      message: 'Foto berhasil diunggah dan disimpan',
       data: newPhoto
     });
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error Upload:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -91,7 +109,7 @@ router.post('/', authenticateToken, async (req, res) => {
 // PUT update foto (admin only)
 router.put('/:id', authenticateToken, async (req, res) => {
   try {
-    const { title, description, driveId, categoryId } = req.body;
+    const { title, description, categoryId } = req.body;
 
     const photo = await db.getPhotoById(parseInt(req.params.id));
     if (!photo) {
@@ -113,10 +131,6 @@ router.put('/:id', authenticateToken, async (req, res) => {
     if (title) updates.title = title;
     if (description) updates.description = description;
     if (categoryId) updates.categoryId = parseInt(categoryId);
-    if (driveId) {
-      updates.driveId = driveId;
-      updates.imageUrl = `https://lh3.googleusercontent.com/u/0/d/${driveId}=w1000`;
-    }
 
     const updatedPhoto = await db.updatePhoto(parseInt(req.params.id), updates);
 
@@ -126,7 +140,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
       data: updatedPhoto
     });
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error Update:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -139,6 +153,15 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Foto tidak ditemukan' });
     }
 
+    // 1. Hapus file dari Supabase Storage jika ada
+    if (photo.driveId) {
+      await supabase
+        .storage
+        .from('photos')
+        .remove([photo.driveId]);
+    }
+
+    // 2. Hapus dari database
     await db.deletePhoto(parseInt(req.params.id));
 
     res.status(200).json({
@@ -146,7 +169,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       message: 'Foto berhasil dihapus'
     });
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error Delete:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });

@@ -54,14 +54,14 @@
             </div>
 
             <div class="form-group">
-              <label for="driveId">Google Drive File ID *</label>
+              <label for="photoFile">Pilih Gambar *</label>
               <input
-                type="text"
-                id="driveId"
-                placeholder="Contoh: 1a2b3c4d5e6f7g8h9i0j"
+                type="file"
+                id="photoFile"
+                accept="image/*"
                 required
               >
-              <small>Ambil dari URL: https://drive.google.com/file/d/<strong>FILE_ID</strong>/view</small>
+              <small>File akan langsung diupload ke Supabase Storage</small>
             </div>
 
             <div class="form-group">
