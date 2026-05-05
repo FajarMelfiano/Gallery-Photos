@@ -58,12 +58,15 @@ function displayPhotos(photos) {
 
   photos.forEach(photo => {
     const item = document.createElement('div');
+    const imageUrl = photo.imageUrl || photo.image_url;
+    const categoryName = photo.categoryName || 'Uncategorized';
+    
     item.className = 'gallery-item';
     item.innerHTML = `
-      <img src="${photo.imageUrl}" alt="${photo.title}" loading="lazy">
+      <img src="${imageUrl}" alt="${photo.title}" loading="lazy">
       <div class="gallery-info">
         <h3 class="gallery-title">${photo.title}</h3>
-        <span class="gallery-category">${photo.categoryName}</span>
+        <span class="gallery-category">${categoryName}</span>
       </div>
     `;
     item.addEventListener('click', () => openModal(photo));
@@ -99,10 +102,13 @@ function filterPhotos(categoryId, btn) {
 // Open modal
 function openModal(photo) {
   const modal = document.getElementById('photoModal');
-  document.getElementById('modalImage').src = photo.imageUrl;
+  const imageUrl = photo.imageUrl || photo.image_url;
+  const categoryName = photo.categoryName || 'Uncategorized';
+  
+  document.getElementById('modalImage').src = imageUrl;
   document.getElementById('modalTitle').textContent = photo.title;
   document.getElementById('modalDescription').textContent = photo.description || 'Tidak ada deskripsi';
-  document.getElementById('modalCategory').textContent = photo.categoryName;
+  document.getElementById('modalCategory').textContent = categoryName;
   modal.classList.add('active');
 }
 

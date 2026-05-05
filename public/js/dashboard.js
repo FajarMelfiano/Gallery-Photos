@@ -90,15 +90,20 @@ function displayPhotosTable(photos) {
 
   photos.forEach(photo => {
     const tr = document.createElement('tr');
+    // Fallback untuk camelCase vs snake_case
+    const imageUrl = photo.imageUrl || photo.image_url;
+    const categoryName = photo.categoryName || 'Uncategorized';
+    const id = photo.id;
+
     tr.innerHTML = `
       <td>
-        <img src="${photo.imageUrl}" alt="${photo.title}" style="width: 50px; height: 50px; border-radius: 0.5rem; object-fit: cover;">
+        <img src="${imageUrl}" alt="${photo.title}" style="width: 50px; height: 50px; border-radius: 0.5rem; object-fit: cover;">
       </td>
       <td>${photo.title}</td>
-      <td>${photo.categoryName}</td>
+      <td>${categoryName}</td>
       <td>
-        <button class="action-btn edit" data-id="${photo.id}" onclick="editPhoto(${photo.id})">✏️ Edit</button>
-        <button class="action-btn delete" data-id="${photo.id}" onclick="deletePhoto(${photo.id})">🗑️ Hapus</button>
+        <button class="action-btn edit" data-id="${id}" onclick="editPhoto(${id})">✏️ Edit</button>
+        <button class="action-btn delete" data-id="${id}" onclick="deletePhoto(${id})">🗑️ Hapus</button>
       </td>
     `;
     tbody.appendChild(tr);
