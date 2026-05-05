@@ -66,7 +66,8 @@ router.post('/', authenticateToken, async (req, res) => {
     }
 
     // Buat image URL dari driveId
-    const imageUrl = `https://drive.google.com/uc?export=view&id=${driveId}`;
+    // Format direct link (thumbnail/preview) yang lebih stabil
+    const imageUrl = `https://lh3.googleusercontent.com/u/0/d/${driveId}=w1000`;
 
     const newPhoto = await db.addPhoto({
       title,
@@ -114,7 +115,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
     if (categoryId) updates.categoryId = parseInt(categoryId);
     if (driveId) {
       updates.driveId = driveId;
-      updates.imageUrl = `https://drive.google.com/uc?export=view&id=${driveId}`;
+      updates.imageUrl = `https://lh3.googleusercontent.com/u/0/d/${driveId}=w1000`;
     }
 
     const updatedPhoto = await db.updatePhoto(parseInt(req.params.id), updates);

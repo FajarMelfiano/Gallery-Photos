@@ -1,5 +1,30 @@
 const supabase = require('../config/supabase');
 
+// Helper to transform photo from snake_case to camelCase
+const transformPhoto = (photo) => {
+  if (!photo) return null;
+  return {
+    id: photo.id,
+    title: photo.title,
+    description: photo.description,
+    driveId: photo.drive_id,
+    imageUrl: photo.image_url,
+    categoryId: photo.category_id,
+    createdAt: photo.created_at
+  };
+};
+
+// Helper to transform category
+const transformCategory = (category) => {
+  if (!category) return null;
+  return {
+    id: category.id,
+    name: category.name,
+    icon: category.icon,
+    createdAt: category.created_at
+  };
+};
+
 // Get all photos
 const getPhotos = async () => {
   try {
@@ -9,7 +34,7 @@ const getPhotos = async () => {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(transformPhoto);
   } catch (error) {
     console.error('Error fetching photos:', error);
     throw error;
@@ -26,7 +51,7 @@ const getPhotoById = async (id) => {
       .single();
 
     if (error && error.code !== 'PGRST116') throw error;
-    return data || null;
+    return transformPhoto(data);
   } catch (error) {
     console.error('Error fetching photo:', error);
     throw error;
@@ -51,18 +76,7 @@ const addPhoto = async (photo) => {
       .select();
 
     if (error) throw error;
-    
-    if (data && data[0]) {
-      return {
-        id: data[0].id,
-        title: data[0].title,
-        description: data[0].description,
-        driveId: data[0].drive_id,
-        imageUrl: data[0].image_url,
-        categoryId: data[0].category_id,
-        createdAt: data[0].created_at
-      };
-    }
+    return transformPhoto(data ? data[0] : null);
   } catch (error) {
     console.error('Error adding photo:', error);
     throw error;
@@ -86,18 +100,7 @@ const updatePhoto = async (id, updates) => {
       .select();
 
     if (error) throw error;
-    
-    if (data && data[0]) {
-      return {
-        id: data[0].id,
-        title: data[0].title,
-        description: data[0].description,
-        driveId: data[0].drive_id,
-        imageUrl: data[0].image_url,
-        categoryId: data[0].category_id,
-        createdAt: data[0].created_at
-      };
-    }
+    return transformPhoto(data ? data[0] : null);
   } catch (error) {
     console.error('Error updating photo:', error);
     throw error;
@@ -129,7 +132,7 @@ const getCategories = async () => {
       .order('created_at', { ascending: true });
 
     if (error) throw error;
-    return data || [];
+    return (data || []).map(transformCategory);
   } catch (error) {
     console.error('Error fetching categories:', error);
     throw error;
@@ -146,7 +149,7 @@ const getCategoryById = async (id) => {
       .single();
 
     if (error && error.code !== 'PGRST116') throw error;
-    return data || null;
+    return transformCategory(data);
   } catch (error) {
     console.error('Error fetching category:', error);
     throw error;
@@ -168,15 +171,7 @@ const addCategory = async (category) => {
       .select();
 
     if (error) throw error;
-    
-    if (data && data[0]) {
-      return {
-        id: data[0].id,
-        name: data[0].name,
-        icon: data[0].icon,
-        createdAt: data[0].created_at
-      };
-    }
+    return transformCategory(data ? data[0] : null);
   } catch (error) {
     console.error('Error adding category:', error);
     throw error;
@@ -197,15 +192,7 @@ const updateCategory = async (id, updates) => {
       .select();
 
     if (error) throw error;
-    
-    if (data && data[0]) {
-      return {
-        id: data[0].id,
-        name: data[0].name,
-        icon: data[0].icon,
-        createdAt: data[0].created_at
-      };
-    }
+    return transformCategory(data ? data[0] : null);
   } catch (error) {
     console.error('Error updating category:', error);
     throw error;
