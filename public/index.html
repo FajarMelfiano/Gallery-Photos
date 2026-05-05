@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Photo Gallery - Galeri Foto Modern</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <div class="container">
+      <div class="logo">
+        <span>📸</span>
+        <span>Photo Gallery</span>
+      </div>
+      <nav>
+        <ul class="nav-links">
+          <li><a href="#home">Home</a></li>
+          <li><a href="#gallery">Gallery</a></li>
+          <li><a href="#about">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero" id="home">
+    <div class="container">
+      <h1>Galeri Foto Terbaik Anda</h1>
+      <p>Nikmati koleksi foto terbaik dengan desain modern dan interface yang indah</p>
+    </div>
+  </section>
+
+  <!-- Filter Section -->
+  <div class="container">
+    <div class="filter-section"></div>
+  </div>
+
+  <!-- Gallery Grid -->
+  <section class="gallery" id="gallery"></section>
+
+  <!-- Modal -->
+  <div class="modal" id="photoModal">
+    <div class="modal-content">
+      <button class="modal-close" id="modalClose">✕</button>
+      <img class="modal-image" id="modalImage" src="" alt="">
+      <div class="modal-info">
+        <h2 class="modal-title" id="modalTitle"></h2>
+        <p class="modal-description" id="modalDescription"></p>
+        <span class="modal-category" id="modalCategory"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Button -->
+  <button class="admin-btn">🔐 Admin Panel</button>
+
+  <script src="/js/gallery.js"></script>
+</body>
+</html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Photo Gallery</title>
+  <link rel="stylesheet" href="/css/admin-dashboard.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="admin-header">
+    <div class="container">
+      <div class="header-content">
+        <h1 class="logo">📸 Admin Dashboard</h1>
+        <div class="header-actions">
+          <button id="backBtn" class="btn btn-secondary">← Kembali ke Gallery</button>
+          <button id="logoutBtn" class="btn btn-danger">Logout</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="admin-container">
+    <div class="container">
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="photos">📷 Kelola Foto</button>
+        <button class="tab-btn" data-tab="categories">📁 Kelola Kategori</button>
+      </div>
+
+      <!-- Tab: Kelola Foto -->
+      <div class="tab-content active" id="photos-tab">
+        <div class="dashboard-section">
+          <h2>Tambah Foto Baru</h2>
+          <form id="addPhotoForm" class="form-grid">
+            <div class="form-group">
+              <label for="photoTitle">Judul Foto *</label>
+              <input
+                type="text"
+                id="photoTitle"
+                placeholder="Contoh: Sunset di Pantai"
+                required
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="photoDescription">Deskripsi</label>
+              <textarea
+                id="photoDescription"
+                placeholder="Deskripsi foto (opsional)"
+                rows="3"
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="driveId">Google Drive File ID *</label>
+              <input
+                type="text"
+                id="driveId"
+                placeholder="Contoh: 1a2b3c4d5e6f7g8h9i0j"
+                required
+              >
+              <small>Ambil dari URL: https://drive.google.com/file/d/<strong>FILE_ID</strong>/view</small>
+            </div>
+
+            <div class="form-group">
+              <label for="categoryId">Kategori *</label>
+              <select id="categoryId" required>
+                <option value="">-- Pilih Kategori --</option>
+              </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="grid-column: 1/-1;">
+              ➕ Tambah Foto
+            </button>
+          </form>
+        </div>
+
+        <!-- Daftar Foto -->
+        <div class="dashboard-section">
+          <h2>Daftar Foto</h2>
+          <div class="table-wrapper">
+            <table id="photosTable">
+              <thead>
+                <tr>
+                  <th>Gambar</th>
+                  <th>Judul</th>
+                  <th>Kategori</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="4" style="text-align: center; padding: 2rem;">Loading...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Kelola Kategori -->
+      <div class="tab-content" id="categories-tab">
+        <div class="dashboard-section">
+          <h2>Tambah Kategori Baru</h2>
+          <form id="addCategoryForm" class="form-grid">
+            <div class="form-group">
+              <label for="categoryName">Nama Kategori *</label>
+              <input
+                type="text"
+                id="categoryName"
+                placeholder="Contoh: Nature, Friends, Travel"
+                required
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="categoryIcon">Icon/Emoji (opsional)</label>
+              <input
+                type="text"
+                id="categoryIcon"
+                placeholder="🌿"
+                maxlength="5"
+              >
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="grid-column: 1/-1;">
+              ➕ Tambah Kategori
+            </button>
+          </form>
+        </div>
+
+        <!-- Daftar Kategori -->
+        <div class="dashboard-section">
+          <h2>Daftar Kategori</h2>
+          <div class="table-wrapper">
+            <table id="categoriesTable">
+              <thead>
+                <tr>
+                  <th>Icon</th>
+                  <th>Nama</th>
+                  <th>Jumlah Foto</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="4" style="text-align: center; padding: 2rem;">Loading...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+{
+  "categories": [
+    {
+      "id": 1,
+      "name": "Nature",
+      "icon": "🌿"
+    },
+    {
+      "id": 2,
+      "name": "Friends",
+      "icon": "👥"
+    },
+    {
+      "id": 3,
+      "name": "Travel",
+      "icon": "✈️"
+    }
+  ],
+  "photos": [
+    {
+      "id": 1,
+      "title": "Beautiful Sunset",
+      "description": "A stunning sunset over the mountains",
+      "driveId": "1example_id_1",
+      "imageUrl": "https://drive.google.com/uc?export=view&id=1example_id_1",
+      "categoryId": 1,
+      "createdAt": "2026-05-05T09:23:54.187Z"
+    }
+  ]
+}
