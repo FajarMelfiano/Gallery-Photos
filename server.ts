@@ -48,6 +48,17 @@ async function startServer() {
       }
       res.set("Cache-Control", "public, max-age=31536000");
 
+      if (req.query.download) {
+        let filename = "photo.jpg";
+        if (typeof req.query.filename === "string" && req.query.filename.trim() !== "") {
+          filename = req.query.filename.replace(/[^a-zA-Z0-9_\-\. ]/g, "");
+          if (!filename.toLowerCase().endsWith(".jpg") && !filename.toLowerCase().endsWith(".png")) {
+            filename += ".jpg";
+          }
+        }
+        res.set("Content-Disposition", `attachment; filename="${filename}"`);
+      }
+
       response.data.pipe(res);
     } catch (error: any) {
       console.error("Image Proxy Error:", error.message);

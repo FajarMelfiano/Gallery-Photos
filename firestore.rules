@@ -17,13 +17,13 @@ service cloud.firestore {
     function isValidCategory(data) {
       return data.keys().hasAll(['name', 'icon', 'createdAt', 'updatedAt']) && data.keys().size() == 4 &&
              data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
-             data.icon is string && data.icon.size() > 0 && data.icon.size() <= 10 &&
+             data.icon is string && data.icon.size() > 0 && data.icon.size() <= 100 &&
              data.createdAt == request.time && data.updatedAt == request.time;
     }
 
     function isValidCategoryUpdate(data) {
        return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
-             data.icon is string && data.icon.size() > 0 && data.icon.size() <= 10 &&
+             data.icon is string && data.icon.size() > 0 && data.icon.size() <= 100 &&
              data.updatedAt == request.time;
     }
 
