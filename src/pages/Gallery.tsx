@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { dbService } from "../services/db";
 import { Photo, Category } from "../types";
-import { Image, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Image, ChevronLeft, ChevronRight, X, Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "../lib/utils";
 
@@ -129,12 +129,21 @@ export const Gallery: React.FC = () => {
             className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8 bg-black/95 backdrop-blur-sm"
             onClick={() => setSelectedPhoto(null)}
           >
-            <button 
-              className="absolute top-4 right-4 text-white/70 hover:text-white p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-              onClick={() => setSelectedPhoto(null)}
-            >
-              <X className="w-6 h-6" />
-            </button>
+            <div className="absolute top-4 right-4 flex items-center gap-2">
+              <a 
+                href={`/api/photos/view/${selectedPhoto.drive_id}?download=1&filename=${encodeURIComponent(selectedPhoto.title || 'photo')}`}
+                download
+                className="text-white/70 hover:text-white p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+              >
+                <Download className="w-5 h-5" />
+              </a>
+              <button 
+                className="text-white/70 hover:text-white p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                onClick={() => setSelectedPhoto(null)}
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
             <motion.div
               initial={{ scale: 0.95 }}
               animate={{ scale: 1 }}
