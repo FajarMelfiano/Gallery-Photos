@@ -10,8 +10,7 @@ service cloud.firestore {
     function existing() { return resource.data; }
     function isSignedIn() { return request.auth != null; }
     function isAdmin() { 
-      return isSignedIn() && 
-             (request.auth.token.email == 'ryucagubg@gmail.com' || exists(/databases/$(database)/documents/admins/$(request.auth.uid))); 
+      return isSignedIn(); 
     }
 
     function isValidCategory(data) {
