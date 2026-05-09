@@ -129,6 +129,33 @@ export const dbService = {
     }
   },
 
+  async bulkCreatePhotos(photos: Array<{ id: string, photo: Omit<Photo, 'id' | 'createdAt' | 'updatedAt'> }>): Promise<void> {
+    const { writeBatch } = await import('firebase/firestore');
+    
+    // Firestore batches can hold up to 500 writes
+    // We will chunk them into batches of 400
+    const CHUNK_SIZE = 400;
+    for (let i = 0; i < photos.length; i += CHUNK_SIZE) {
+      const batchChunk = photos.slice(i, i + CHUNK_SIZE);
+      const batch = writeBatch(db);
+      
+      for (const item of batchChunk) {
+        const docRef = doc(db, 'photos', item.id);
+        batch.set(docRef, {
+          ...item.photo,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      }
+      
+      try {
+        await batch.commit();
+      } catch (e) {
+        handleFirestoreError(e, OperationType.CREATE, 'photos (bulk)');
+      }
+    }
+  },
+
   async updatePhoto(id: string, photo: Partial<Omit<Photo, 'id' | 'createdAt' | 'updatedAt'>>): Promise<void> {
     const p = `photos/${id}`;
     try {

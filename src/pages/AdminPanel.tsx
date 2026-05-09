@@ -24,53 +24,56 @@ export const AdminPanel: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-neutral-950 flex flex-col md:flex-row text-neutral-100 font-sans select-none">
-      {/* Sidebar */}
-      <aside className="w-full md:w-64 bg-neutral-950 border-r border-neutral-800 flex flex-col min-h-[50vh] md:min-h-screen p-4 gap-4">
-        <div className="flex items-center gap-3 px-2 py-4 mb-4">
-          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
-            <LayoutGrid className="w-5 h-5 text-white" />
+      {/* Sidebar / Top Nav on Mobile */}
+      <aside className="w-full md:w-64 bg-neutral-950 border-b md:border-b-0 md:border-r border-neutral-800 flex flex-col shrink-0">
+        <div className="flex items-center justify-between md:justify-start gap-3 px-6 py-5 md:py-8">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20 shrink-0">
+              <LayoutGrid className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <span className="font-bold tracking-tight text-lg leading-tight block">Admin<span className="text-indigo-400">.Panel</span></span>
+              <p className="text-[10px] text-neutral-500 uppercase tracking-widest font-medium hidden sm:block">Control Center</p>
+            </div>
           </div>
-          <div>
-            <span className="font-bold tracking-tight text-lg leading-tight">Admin<span className="text-indigo-400">.Panel</span></span>
-            <p className="text-[10px] text-neutral-500 uppercase tracking-widest font-medium">Dashboard</p>
-          </div>
+          {/* Mobile Tab Indicator/Button can go here if needed */}
         </div>
         
-        <nav className="flex-1 flex flex-col gap-1">
+        <nav className="flex md:flex-col gap-1 px-4 pb-4 md:pt-4 overflow-x-auto md:overflow-x-visible hide-scrollbar">
           <button
             onClick={() => setActiveTab("dashboard")}
             className={cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
-              activeTab === "dashboard" ? "bg-neutral-900 border border-neutral-800 text-indigo-400" : "text-neutral-400 hover:bg-neutral-900/50 hover:text-neutral-200 border border-transparent"
+              "flex items-center gap-2 md:gap-3 px-4 md:px-3 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap",
+              activeTab === "dashboard" ? "bg-neutral-900 border border-neutral-800 text-indigo-400" : "text-neutral-500 hover:text-neutral-200 border border-transparent"
             )}
           >
             <BarChart2 className="w-4 h-4" />
-            Dashboard
+            <span>Dashboard</span>
           </button>
           <button
             onClick={() => setActiveTab("photos")}
             className={cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
-              activeTab === "photos" ? "bg-neutral-900 border border-neutral-800 text-indigo-400" : "text-neutral-400 hover:bg-neutral-900/50 hover:text-neutral-200 border border-transparent"
+              "flex items-center gap-2 md:gap-3 px-4 md:px-3 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap",
+              activeTab === "photos" ? "bg-neutral-900 border border-neutral-800 text-indigo-400" : "text-neutral-500 hover:text-neutral-200 border border-transparent"
             )}
           >
             <Image className="w-4 h-4" />
-            Photos
+            <span>Photos</span>
           </button>
           <button
             onClick={() => setActiveTab("categories")}
             className={cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
-              activeTab === "categories" ? "bg-neutral-900 border border-neutral-800 text-indigo-400" : "text-neutral-400 hover:bg-neutral-900/50 hover:text-neutral-200 border border-transparent"
+              "flex items-center gap-2 md:gap-3 px-4 md:px-3 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap",
+              activeTab === "categories" ? "bg-neutral-900 border border-neutral-800 text-indigo-400" : "text-neutral-500 hover:text-neutral-200 border border-transparent"
             )}
           >
             <LayoutGrid className="w-4 h-4" />
-            Categories
+            <span>Categories</span>
           </button>
         </nav>
 
-        <div className="mt-auto border-t border-neutral-800 pt-4">
-          <div className="px-2 mb-4 text-xs text-neutral-500 truncate font-mono">{user?.email}</div>
+        <div className="hidden md:flex mt-auto border-t border-neutral-800 p-4 flex-col gap-4">
+          <div className="px-2 text-xs text-neutral-500 truncate font-mono">{user?.email}</div>
           <button
             onClick={logOut}
             className="flex items-center justify-center gap-2 px-3 py-2.5 w-full rounded-xl text-sm font-bold text-red-400 border border-red-500/10 hover:bg-red-500/10 hover:border-red-500/20 transition-all bg-neutral-900"
@@ -289,6 +292,8 @@ const PhotosManager: React.FC<{ photos: Photo[], categories: Category[] }> = ({ 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
+  const [isImportingFolder, setIsImportingFolder] = useState(false);
+  const [importStatus, setImportStatus] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     title: "",
@@ -297,10 +302,45 @@ const PhotosManager: React.FC<{ photos: Photo[], categories: Category[] }> = ({ 
     category_id: ""
   });
 
+  const parseDriveId = (input: string) => {
+    // Regex for file ID: d/ID/view or id=ID or simply the ID string
+    const fileRegex = /(?:[\/=d]\/|id=)([a-zA-Z0-9-_]{25,})/;
+    // Regex for folder ID: folders/ID
+    const folderRegex = /folders\/([a-zA-Z0-9-_]{25,})/;
+    
+    // Check for folder first
+    const folderMatch = input.match(folderRegex);
+    if (folderMatch) return { id: folderMatch[1], type: 'folder' as const };
+    
+    const fileMatch = input.match(fileRegex);
+    if (fileMatch) return { id: fileMatch[1], type: 'file' as const };
+    
+    // Fallback: if it's already a clean ID
+    if (input.length >= 25 && !input.includes('/') && !input.includes('?')) {
+      return { id: input, type: 'file' as const };
+    }
+    
+    return { id: input, type: 'unknown' as const };
+  };
+
+  const handleDriveIdChange = (val: string) => {
+    const parsed = parseDriveId(val);
+    setFormData({ ...formData, drive_id: parsed.id });
+    
+    // If it's a folder link, notify user we could batch import
+    if (parsed.type === 'folder' && !editingId) {
+       setImportStatus("Google Drive folder detected. Click 'Import Folder' to add all photos.");
+    } else {
+       setImportStatus(null);
+    }
+  };
+
   const resetForm = () => {
     setFormData({ title: "", description: "", drive_id: "", category_id: "" });
     setIsModalOpen(false);
     setEditingId(null);
+    setIsImportingFolder(false);
+    setImportStatus(null);
   };
 
   const handleEdit = (p: Photo) => {
@@ -314,9 +354,71 @@ const PhotosManager: React.FC<{ photos: Photo[], categories: Category[] }> = ({ 
     setIsModalOpen(true);
   };
 
+  const handleBatchImport = async () => {
+    if (!formData.drive_id || !formData.category_id) {
+      alert("Please provide Folder ID and Category.");
+      return;
+    }
+
+    setIsImportingFolder(true);
+    setImportStatus("Reading folder contents...");
+
+    try {
+      const resp = await fetch(`/api/photos/list-folder/${formData.drive_id}`);
+      if (!resp.ok) throw new Error("Failed to list folder");
+      
+      const { files } = await resp.json();
+      
+      if (!files || files.length === 0) {
+        setImportStatus("No images found in this folder.");
+        setIsImportingFolder(false);
+        return;
+      }
+
+      setImportStatus(`Found ${files.length} images. Syncing...`);
+
+      const photosToCreate = files.map((file: any, i: number) => {
+        return {
+          id: `${Date.now()}_${i}`,
+          photo: {
+            title: (file.name ? file.name.split('.')[0] : "Photo").substring(0, 190) || "Photo",
+            description: `Bulk imported from folder: ${formData.drive_id}`.substring(0, 999),
+            drive_id: file.id,
+            category_id: formData.category_id
+          }
+        };
+      });
+
+      await dbService.bulkCreatePhotos(photosToCreate);
+
+      setImportStatus("Successfully imported all images!");
+      setTimeout(() => {
+        resetForm();
+      }, 1500);
+    } catch (err: any) {
+      console.error(err);
+      setImportStatus("Error during import. Ensure folder is public.");
+      setIsImportingFolder(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title || !formData.drive_id || !formData.category_id) return;
+    
+    // Check if it's a folder import scenario
+    if (importStatus && importStatus.includes("detected") && !editingId) {
+      if (!formData.category_id) {
+        alert("Please select a category for the folder import.");
+        return;
+      }
+      await handleBatchImport();
+      return;
+    }
+
+    if (!formData.title || !formData.drive_id || !formData.category_id) {
+      alert("Please fill in Title, Drive ID, and Category.");
+      return;
+    }
 
     try {
       if (editingId) {
@@ -389,11 +491,25 @@ const PhotosManager: React.FC<{ photos: Photo[], categories: Category[] }> = ({ 
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-1.5">Google Drive File ID</label>
+            <label className="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-1.5">Google Drive URL or ID</label>
             <div className="flex relative">
-              <input type="text" value={formData.drive_id} onChange={e => setFormData({...formData, drive_id: e.target.value})} className="w-full px-4 py-3 bg-neutral-900 border border-neutral-800 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-colors placeholder:text-neutral-600 outline-none font-mono text-sm text-neutral-100" required placeholder="1O_abcd1234..." />
+              <input 
+                type="text" 
+                value={formData.drive_id} 
+                onChange={e => handleDriveIdChange(e.target.value)} 
+                className="w-full px-4 py-3 bg-neutral-900 border border-neutral-800 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-colors placeholder:text-neutral-600 outline-none font-mono text-sm text-neutral-100" 
+                required 
+                placeholder="Paste Drive link or ID..." 
+              />
             </div>
-            <p className="text-[10px] text-neutral-500 mt-2 leading-relaxed">Right click file in Drive &gt; Share &gt; Copy link. Extract the ID from the URL.</p>
+            {importStatus ? (
+              <p className={cn(
+                "text-[10px] mt-2 font-medium truncate",
+                importStatus.includes("Error") ? "text-red-400" : "text-indigo-400"
+              )}>{importStatus}</p>
+            ) : (
+              <p className="text-[10px] text-neutral-500 mt-2 leading-relaxed">Paste a file link or a folder link to import everything.</p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -411,9 +527,22 @@ const PhotosManager: React.FC<{ photos: Photo[], categories: Category[] }> = ({ 
             <textarea rows={3} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full px-4 py-3 bg-neutral-900 border border-neutral-800 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-colors placeholder:text-neutral-600 outline-none resize-none text-sm text-neutral-100" placeholder="Source info or description..." />
           </div>
 
-          <div className="flex justify-end pt-4">
-            <button type="submit" className="bg-indigo-600 text-white px-6 py-3 rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/20 hover:bg-indigo-500 transition-all">
-              {editingId ? "Update Config" : "Generate Proxy"}
+          <div className="flex justify-end gap-3 pt-4">
+            {importStatus && importStatus.includes("detected") && !isImportingFolder && (
+              <button 
+                type="button" 
+                onClick={handleBatchImport}
+                className="bg-neutral-800 text-indigo-400 border border-neutral-700 px-6 py-3 rounded-xl text-sm font-bold hover:bg-neutral-700 transition-all"
+              >
+                Import Folder
+              </button>
+            )}
+            <button 
+              type="submit" 
+              disabled={isImportingFolder}
+              className="bg-indigo-600 text-white px-6 py-3 rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/20 hover:bg-indigo-500 transition-all disabled:opacity-50"
+            >
+              {isImportingFolder ? "Importing..." : (editingId ? "Update Config" : "Generate Proxy")}
             </button>
           </div>
         </form>
@@ -423,8 +552,8 @@ const PhotosManager: React.FC<{ photos: Photo[], categories: Category[] }> = ({ 
          {filteredPhotos.map(photo => {
            const cat = categories.find(c => c.id === photo.category_id);
            return (
-           <div key={photo.id} className="bg-neutral-900 rounded-3xl border border-neutral-800 overflow-hidden flex flex-col group relative">
-             <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-transparent to-transparent z-10 pointer-events-none"></div>
+           <div key={photo.id} className="bg-neutral-900 rounded-3xl border border-neutral-800 overflow-hidden flex flex-col group relative h-full">
+             <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/20 to-transparent z-10 pointer-events-none"></div>
              <div className="aspect-square bg-neutral-800 relative z-0">
                <img 
                  src={`/api/photos/view/${photo.drive_id}`} 
@@ -436,24 +565,24 @@ const PhotosManager: React.FC<{ photos: Photo[], categories: Category[] }> = ({ 
                  }}
                />
                <div className="absolute top-4 right-4 z-20 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                 <button onClick={() => handleEdit(photo)} className="p-2 backdrop-blur-md bg-black/40 border border-white/10 rounded-xl text-neutral-300 hover:text-indigo-400 hover:bg-black/60 transition-all shadow-xl">
+                 <button onClick={() => handleEdit(photo)} className="p-2 backdrop-blur-md bg-black/40 border border-white/10 rounded-xl text-neutral-300 hover:text-indigo-400 transition-all shadow-xl">
                    <Edit2 className="w-4 h-4" />
                  </button>
                  <button onClick={() => {
                    if(confirm("Delete this proxy config?")) dbService.deletePhoto(photo.id);
-                 }} className="p-2 backdrop-blur-md bg-black/40 border border-white/10 rounded-xl text-neutral-300 hover:text-red-400 hover:bg-black/60 transition-all shadow-xl">
+                 }} className="p-2 backdrop-blur-md bg-black/40 border border-white/10 rounded-xl text-neutral-300 hover:text-red-400 transition-all shadow-xl">
                    <Trash2 className="w-4 h-4" />
                  </button>
                </div>
              </div>
-             <div className="absolute bottom-6 left-6 right-6 z-20 pointer-events-none">
-               <div className="flex items-center gap-2 mb-2">
-                 <span className="px-2 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-bold uppercase tracking-widest rounded shadow-sm shrink-0">
+             <div className="absolute bottom-4 left-4 right-4 z-20 pointer-events-none">
+               <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                 <span className="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[9px] font-bold uppercase tracking-widest rounded">
                    {cat?.icon} {cat?.name || "Uncategorized"}
                  </span>
                </div>
-               <h3 className="font-bold text-xl leading-tight truncate text-neutral-100">{photo.title}</h3>
-               <p className="text-xs text-neutral-400 font-mono mt-1 opacity-75 truncate">{photo.drive_id.substring(0, 10)}... • SG Node</p>
+               <h3 className="font-bold text-base sm:text-lg leading-tight truncate text-neutral-100">{photo.title}</h3>
+               <p className="text-[10px] text-neutral-400 font-mono mt-0.5 opacity-75 truncate">{photo.drive_id.substring(0, 10)}... • G-Node</p>
              </div>
            </div>
            )

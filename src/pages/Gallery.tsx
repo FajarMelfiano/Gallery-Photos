@@ -33,9 +33,9 @@ export const Gallery: React.FC = () => {
     <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans select-none">
       {/* Header */}
       <header className="sticky top-0 z-30 bg-neutral-900/80 backdrop-blur-md border-b border-neutral-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            <div className="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20 shrink-0">
               <Image className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -43,11 +43,11 @@ export const Gallery: React.FC = () => {
               <p className="text-[10px] text-neutral-500 font-medium uppercase tracking-widest hidden sm:block">G-Drive Photo Engine</p>
             </div>
           </div>
-          <nav className="flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar">
+          <nav className="flex items-center gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 hide-scrollbar scroll-smooth">
             <button
               onClick={() => setActiveCategory("all")}
               className={cn(
-                "px-4 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors",
+                "px-4 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200",
                 activeCategory === "all" ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20" : "bg-neutral-900 border border-neutral-800 text-neutral-400 hover:bg-neutral-800"
               )}
             >
@@ -58,11 +58,11 @@ export const Gallery: React.FC = () => {
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
                 className={cn(
-                  "px-4 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 border",
+                  "px-4 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 flex items-center gap-1.5 border",
                   activeCategory === cat.id ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-500/20" : "bg-neutral-900 border-neutral-800 text-neutral-400 hover:bg-neutral-800"
                 )}
               >
-                <span>{cat.icon}</span>
+                <span className="text-base leading-none">{cat.icon}</span>
                 {cat.name}
               </button>
             ))}
@@ -71,7 +71,7 @@ export const Gallery: React.FC = () => {
       </header>
 
       {/* Main Grid */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {loading ? (
            <div className="flex justify-center items-center h-64">
              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
@@ -83,7 +83,7 @@ export const Gallery: React.FC = () => {
         ) : (
           <motion.div 
             layout
-            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
+            className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6"
           >
             <AnimatePresence>
               {filteredPhotos.map((photo) => {
@@ -149,17 +149,24 @@ export const Gallery: React.FC = () => {
               animate={{ scale: 1 }}
               exit={{ scale: 0.95 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative max-w-5xl w-full max-h-full flex flex-col items-center gap-4"
+              className="relative max-w-5xl w-full max-h-full flex flex-col items-center gap-4 py-8"
             >
               <img
                 src={`/api/photos/view/${selectedPhoto.drive_id}`}
                 alt={selectedPhoto.title}
-                className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl"
+                className="max-w-full max-h-[60vh] sm:max-h-[80vh] object-contain rounded-lg shadow-2xl"
               />
-              <div className="text-center w-full max-w-2xl bg-black/50 p-4 rounded-xl text-white">
-                <h2 className="text-xl font-semibold mb-2 text-white">{selectedPhoto.title}</h2>
+              <div className="w-full max-w-2xl bg-neutral-900/40 backdrop-blur-md border border-white/5 p-5 sm:p-6 rounded-2xl sm:rounded-3xl text-white">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-3">
+                  <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight leading-tight">{selectedPhoto.title}</h2>
+                  <span className="px-2 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest rounded w-fit">
+                     Sync Active
+                  </span>
+                </div>
                 {selectedPhoto.description && (
-                  <p className="text-neutral-400 text-sm whitespace-pre-wrap">{selectedPhoto.description}</p>
+                  <p className="text-neutral-400 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap line-clamp-4 sm:line-clamp-none">
+                    {selectedPhoto.description}
+                  </p>
                 )}
               </div>
             </motion.div>
