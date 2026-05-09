@@ -548,41 +548,52 @@ const PhotosManager: React.FC<{ photos: Photo[], categories: Category[] }> = ({ 
         </form>
       </Modal>
 
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 grid-flow-dense auto-rows-[160px] md:auto-rows-[200px]">
          {filteredPhotos.map(photo => {
            const cat = categories.find(c => c.id === photo.category_id);
+           
+           // Deterministic Grid Spacing for Bento Grid
+           let sum = 0;
+           for(let i=0; i<photo.drive_id.length; i++) sum += photo.drive_id.charCodeAt(i);
+           const mod = sum % 10;
+           let gridClass = "col-span-1 row-span-1";
+           if (mod === 0) gridClass = "col-span-2 row-span-2";
+           else if (mod === 1) gridClass = "col-span-1 row-span-2";
+           else if (mod === 2) gridClass = "col-span-2 row-span-1";
+           
            return (
-           <div key={photo.id} className="bg-neutral-900 rounded-3xl border border-neutral-800 overflow-hidden flex flex-col group relative h-full">
-             <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/20 to-transparent z-10 pointer-events-none"></div>
-             <div className="aspect-square bg-neutral-800 relative z-0">
-               <img 
-                 src={`/api/photos/view/${photo.drive_id}`} 
-                 alt={photo.title}
-                 loading="lazy"
-                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                 onError={(e) => {
-                   (e.target as HTMLImageElement).src = 'https://placehold.co/600x400/262626/737373.png?text=Sync+Error';
-                 }}
-               />
-               <div className="absolute top-4 right-4 z-20 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                 <button onClick={() => handleEdit(photo)} className="p-2 backdrop-blur-md bg-black/40 border border-white/10 rounded-xl text-neutral-300 hover:text-indigo-400 transition-all shadow-xl">
-                   <Edit2 className="w-4 h-4" />
-                 </button>
-                 <button onClick={() => {
-                   if(confirm("Delete this proxy config?")) dbService.deletePhoto(photo.id);
-                 }} className="p-2 backdrop-blur-md bg-black/40 border border-white/10 rounded-xl text-neutral-300 hover:text-red-400 transition-all shadow-xl">
-                   <Trash2 className="w-4 h-4" />
-                 </button>
-               </div>
+           <div key={photo.id} className={cn("bg-neutral-900 rounded-2xl md:rounded-3xl border border-neutral-800 overflow-hidden flex flex-col group relative shadow-md hover:shadow-2xl transition-all duration-300 transform", gridClass)}>
+             <div className="absolute inset-0 bg-neutral-800"></div>
+             <img 
+               src={`/api/photos/view/${photo.drive_id}`} 
+               alt={photo.title}
+               loading="lazy"
+               className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110 relative z-0"
+               onError={(e) => {
+                 (e.target as HTMLImageElement).src = 'https://placehold.co/600x400/262626/737373.png?text=Sync+Error';
+               }}
+             />
+             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 pointer-events-none"></div>
+             
+             <div className="absolute top-3 right-3 z-20 flex gap-2 opacity-0 group-hover:opacity-100 transition-all translate-y-[-10px] group-hover:translate-y-0">
+               <button onClick={() => handleEdit(photo)} className="p-2 backdrop-blur-md bg-black/50 border border-white/20 rounded-xl text-neutral-200 hover:text-indigo-400 hover:bg-black/80 transition-all shadow-xl">
+                 <Edit2 className="w-4 h-4" />
+               </button>
+               <button onClick={() => {
+                 if(confirm("Delete this proxy config?")) dbService.deletePhoto(photo.id);
+               }} className="p-2 backdrop-blur-md bg-black/50 border border-white/20 rounded-xl text-neutral-200 hover:text-red-400 hover:bg-black/80 transition-all shadow-xl">
+                 <Trash2 className="w-4 h-4" />
+               </button>
              </div>
-             <div className="absolute bottom-4 left-4 right-4 z-20 pointer-events-none">
-               <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                 <span className="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[9px] font-bold uppercase tracking-widest rounded">
+
+             <div className="absolute bottom-4 left-4 right-4 z-20 pointer-events-none flex flex-col justify-end">
+               <div className="flex flex-wrap items-center gap-2 mb-1.5 opacity-0 group-hover:opacity-100 transition-opacity delay-100">
+                 <span className="px-1.5 py-0.5 bg-indigo-500/20 backdrop-blur-md text-indigo-300 border border-indigo-500/30 text-[9px] font-bold uppercase tracking-widest rounded">
                    {cat?.icon} {cat?.name || "Uncategorized"}
                  </span>
                </div>
-               <h3 className="font-bold text-base sm:text-lg leading-tight truncate text-neutral-100">{photo.title}</h3>
-               <p className="text-[10px] text-neutral-400 font-mono mt-0.5 opacity-75 truncate">{photo.drive_id.substring(0, 10)}... • G-Node</p>
+               <h3 className="font-bold text-sm sm:text-base md:text-lg leading-tight truncate text-neutral-100 drop-shadow-md">{photo.title}</h3>
+               <p className="text-[9px] md:text-[10px] text-neutral-400 font-mono mt-0.5 opacity-0 group-hover:opacity-75 transition-opacity delay-150 truncate drop-shadow-md">{photo.drive_id.substring(0, 10)}... • G-Node</p>
              </div>
            </div>
            )

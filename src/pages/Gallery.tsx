@@ -83,33 +83,53 @@ export const Gallery: React.FC = () => {
         ) : (
           <motion.div 
             layout
-            className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6"
+            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-5 grid-flow-dense auto-rows-[140px] sm:auto-rows-[180px] lg:auto-rows-[220px]"
           >
             <AnimatePresence>
-              {filteredPhotos.map((photo) => {
+              {filteredPhotos.map((photo, index) => {
                 const proxyUrl = `/api/photos/view/${photo.drive_id}`;
+                
+                // Construct algorithmic grid span based on drive_id
+                let sum = 0;
+                for(let i = 0; i < photo.drive_id.length; i++) sum += photo.drive_id.charCodeAt(i);
+                const mod = sum % 12;
+                
+                let gridClass = "col-span-1 row-span-1";
+                if (mod === 0) gridClass = "col-span-2 row-span-2"; // Large feature
+                else if (mod === 1 || mod === 2) gridClass = "col-span-1 row-span-2"; // Tall portrait
+                else if (mod === 3 || mod === 4) gridClass = "col-span-2 row-span-1"; // Wide landscape
+
                 return (
                   <motion.div
                     layout
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.2 }}
+                    transition={{ duration: 0.4, type: "spring", bounce: 0.2 }}
                     key={photo.id}
-                    className="group cursor-pointer aspect-square bg-neutral-900 rounded-3xl border border-neutral-800 overflow-hidden relative"
+                    className={cn(
+                      "group cursor-pointer bg-neutral-900 rounded-3xl overflow-hidden relative shadow-md hover:shadow-2xl hover:z-10 transition-all duration-300 transform",
+                      gridClass
+                    )}
                     onClick={() => setSelectedPhoto(photo)}
                   >
+                    <div className="absolute inset-0 bg-neutral-800"></div>
                     <img
                       src={proxyUrl}
                       alt={photo.title}
                       loading="lazy"
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110 relative z-0"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = 'https://placehold.co/600x400/png?text=Image+Load+Error';
                       }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
-                      <h3 className="text-white font-medium truncate">{photo.title}</h3>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4 sm:p-5 z-10 pointer-events-none">
+                      <h3 className="text-white font-bold text-sm sm:text-base leading-tight tracking-tight translate-y-4 group-hover:translate-y-0 transition-transform duration-300 line-clamp-2">{photo.title}</h3>
+                      <div className="flex items-center gap-2 mt-2 translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75">
+                         <span className="px-2 py-1 bg-white/20 backdrop-blur-md rounded text-[9px] font-bold text-white uppercase tracking-wider">
+                           View Image
+                         </span>
+                      </div>
                     </div>
                   </motion.div>
                 );
