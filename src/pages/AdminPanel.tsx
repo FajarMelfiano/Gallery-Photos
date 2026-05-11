@@ -134,7 +134,7 @@ const DashboardTab: React.FC<{ photos: Photo[], categories: Category[] }> = ({ p
                <div key={p.id} className="p-4 flex items-center justify-between hover:bg-neutral-800/50 transition-colors">
                  <div className="flex items-center gap-4">
                    <div className="w-12 h-12 bg-neutral-800 rounded-xl overflow-hidden shrink-0">
-                     <img src={`/api/photos/view/${p.drive_id}`} alt={p.title} className="w-full h-full object-cover" />
+                     <img src={`/api/photos/view/${p.drive_id}?w=400`} alt={p.title} className="w-full h-full object-cover" />
                    </div>
                    <div>
                      <p className="font-bold text-sm text-neutral-200">{p.title}</p>
@@ -294,6 +294,10 @@ const PhotosManager: React.FC<{ photos: Photo[], categories: Category[] }> = ({ 
   const [filterCategory, setFilterCategory] = useState("");
   const [isImportingFolder, setIsImportingFolder] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [selectedPhotoIds, setSelectedPhotoIds] = useState<Set<string>>(new Set());
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [progressStatus, setProgressStatus] = useState<string>("");
+  const [progressPercent, setProgressPercent] = useState<number>(0);
   
   const [formData, setFormData] = useState({
     title: "",
@@ -354,6 +358,82 @@ const PhotosManager: React.FC<{ photos: Photo[], categories: Category[] }> = ({ 
     setIsModalOpen(true);
   };
 
+  const handleDeleteAllPhotos = async () => {
+    if (photos.length === 0) {
+      alert("No photos to delete.");
+      return;
+    }
+
+    if (confirm(`Are you absolutely sure you want to delete ALL ${photos.length} photos? This action cannot be undone.`)) {
+      setProgressStatus("Starting deletion of all photos...");
+      setProgressPercent(0);
+      try {
+        await dbService.bulkDeletePhotos(photos.map(p => p.id), (done, total) => {
+           setProgressPercent(Math.round((done / total) * 100));
+           setProgressStatus(`Deleted ${done} / ${total} photos`);
+        });
+        setProgressStatus("All photos deleted successfully.");
+        setTimeout(() => { setProgressStatus(""); setProgressPercent(0); }, 3000);
+      } catch (e: any) {
+        setProgressStatus("Delete failed: " + e.message);
+      }
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedPhotoIds.size === 0) return;
+    if (confirm(`Are you sure you want to delete ${selectedPhotoIds.size} selected photos?`)) {
+       setProgressStatus(`Deleting ${selectedPhotoIds.size} selected photos...`);
+       setProgressPercent(0);
+       try {
+         await dbService.bulkDeletePhotos(Array.from(selectedPhotoIds), (done, total) => {
+           setProgressPercent(Math.round((done / total) * 100));
+           setProgressStatus(`Deleted ${done} / ${total} selected photos`);
+         });
+         setSelectedPhotoIds(new Set());
+         setIsSelecting(false);
+         setProgressStatus("Selected photos deleted.");
+         setTimeout(() => { setProgressStatus(""); setProgressPercent(0); }, 3000);
+       } catch (e: any) {
+         setProgressStatus("Delete failed: " + e.message);
+       }
+    }
+  }
+
+  const handleDeleteImportedFolder = async () => {
+    const driveInput = prompt("Enter the Folder Google Drive URL or ID that you want to delete:");
+    if (!driveInput) return;
+
+    const parsed = parseDriveId(driveInput);
+    if (!parsed || parsed.type !== 'folder') {
+      alert("Invalid folder ID or URL. Make sure it's a folder link.");
+      return;
+    }
+
+    const descToMatch = `Bulk imported from folder: ${parsed.id}`;
+    const photosToDelete = photos.filter(p => p.description && p.description.includes(descToMatch));
+    
+    if (photosToDelete.length === 0) {
+      alert("No photos found imported from this folder. Ensure you pasted the exact folder link.");
+      return;
+    }
+
+    if (confirm(`Are you sure you want to delete ${photosToDelete.length} photos imported from this folder?`)) {
+      setProgressStatus(`Starting folder deletion of ${photosToDelete.length} photos...`);
+      setProgressPercent(0);
+      try {
+        await dbService.bulkDeletePhotos(photosToDelete.map(p => p.id), (done, total) => {
+          setProgressPercent(Math.round((done / total) * 100));
+          setProgressStatus(`Deleted ${done} / ${total} photos from folder`);
+        });
+        setProgressStatus("Folder deleted successfully.");
+        setTimeout(() => { setProgressStatus(""); setProgressPercent(0); }, 3000);
+      } catch (e: any) {
+        setProgressStatus("Delete failed: " + e.message);
+      }
+    }
+  };
+
   const handleBatchImport = async () => {
     if (!formData.drive_id || !formData.category_id) {
       alert("Please provide Folder ID and Category.");
@@ -389,7 +469,9 @@ const PhotosManager: React.FC<{ photos: Photo[], categories: Category[] }> = ({ 
         };
       });
 
-      await dbService.bulkCreatePhotos(photosToCreate);
+      await dbService.bulkCreatePhotos(photosToCreate, (done, total) => {
+        setImportStatus(`Imported ${done}/${total}...`);
+      });
 
       setImportStatus("Successfully imported all images!");
       setTimeout(() => {
@@ -442,12 +524,23 @@ const PhotosManager: React.FC<{ photos: Photo[], categories: Category[] }> = ({ 
 
   return (
     <div className="space-y-6">
+       {progressStatus && (
+         <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 flex flex-col gap-2">
+            <div className="flex justify-between text-sm font-bold">
+              <span>{progressStatus}</span>
+              <span>{progressPercent}%</span>
+            </div>
+            <div className="w-full h-2 bg-neutral-800 rounded-full overflow-hidden">
+              <div className="h-full bg-indigo-500 transition-all duration-300" style={{ width: `${progressPercent}%` }}></div>
+            </div>
+         </div>
+       )}
        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
          <div>
            <h2 className="text-2xl font-bold tracking-tight">Manage Photos</h2>
            <p className="text-xs text-neutral-500 uppercase tracking-widest mt-1">Photo proxy service</p>
          </div>
-         <div className="flex flex-col sm:flex-row gap-3">
+         <div className="flex flex-col sm:flex-row flex-wrap gap-3 w-full sm:w-auto">
            <div className="relative">
              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
              <input
@@ -475,6 +568,41 @@ const PhotosManager: React.FC<{ photos: Photo[], categories: Category[] }> = ({ 
            >
              <Plus className="w-4 h-4" />
              Add Photo
+           </button>
+           <button
+             onClick={() => {
+               if (isSelecting) {
+                 setIsSelecting(false);
+                 setSelectedPhotoIds(new Set());
+               } else {
+                 setIsSelecting(true);
+               }
+             }}
+             className={cn("flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all sm:ml-auto", isSelecting ? "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30" : "bg-neutral-800 hover:bg-neutral-700 text-neutral-300")}
+           >
+             {isSelecting ? "Cancel Selection" : "Select Photos"}
+           </button>
+           {isSelecting && selectedPhotoIds.size > 0 && (
+             <button
+               onClick={handleDeleteSelected}
+               className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 shadow-lg shadow-red-500/20 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
+             >
+               <Trash2 className="w-4 h-4" /> Delete ({selectedPhotoIds.size})
+             </button>
+           )}
+           <button
+             onClick={handleDeleteImportedFolder}
+             className="flex items-center justify-center gap-2 bg-red-600/10 border border-red-500/20 hover:bg-red-600/20 text-red-400 px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
+             title="Delete a folder that was previously bulk-imported"
+           >
+             <Trash2 className="w-4 h-4" /> Delete Imported Folder
+           </button>
+           <button
+             onClick={handleDeleteAllPhotos}
+             className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 shadow-lg shadow-red-500/20 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
+             title="Delete ALL photos in the gallery"
+           >
+             <Trash2 className="w-4 h-4" /> Delete All
            </button>
          </div>
        </div>
@@ -562,29 +690,49 @@ const PhotosManager: React.FC<{ photos: Photo[], categories: Category[] }> = ({ 
            else if (mod === 2) gridClass = "col-span-2 row-span-1";
            
            return (
-           <div key={photo.id} className={cn("bg-neutral-900 rounded-2xl md:rounded-3xl border border-neutral-800 overflow-hidden flex flex-col group relative shadow-md hover:shadow-2xl transition-all duration-300 transform", gridClass)}>
+           <div 
+             key={photo.id} 
+             onClick={() => {
+               if (isSelecting) {
+                 const newSet = new Set(selectedPhotoIds);
+                 if (newSet.has(photo.id)) newSet.delete(photo.id);
+                 else newSet.add(photo.id);
+                 setSelectedPhotoIds(newSet);
+               }
+             }}
+             className={cn("bg-neutral-900 rounded-2xl md:rounded-3xl border overflow-hidden flex flex-col group relative shadow-md hover:shadow-2xl transition-all duration-300 transform", gridClass, selectedPhotoIds.has(photo.id) ? "border-indigo-500 ring-2 ring-indigo-500/50 scale-95" : "border-neutral-800", isSelecting ? "cursor-pointer" : "")}>
+             {isSelecting && (
+               <div className="absolute top-4 left-4 z-30">
+                 <div className={cn("w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all", selectedPhotoIds.has(photo.id) ? "bg-indigo-500 border-indigo-500" : "border-white/50 bg-black/20 backdrop-blur-md")}>
+                   {selectedPhotoIds.has(photo.id) && <div className="w-2.5 h-2.5 bg-white rounded-full"></div>}
+                 </div>
+               </div>
+             )}
              <div className="absolute inset-0 bg-neutral-800"></div>
              <img 
-               src={`/api/photos/view/${photo.drive_id}`} 
+               src={`/api/photos/view/${photo.drive_id}?w=400`} 
                alt={photo.title}
                loading="lazy"
-               className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110 relative z-0"
+               className={cn("w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110 relative z-0", selectedPhotoIds.has(photo.id) ? "opacity-70" : "")}
                onError={(e) => {
                  (e.target as HTMLImageElement).src = 'https://placehold.co/600x400/262626/737373.png?text=Sync+Error';
                }}
              />
              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 pointer-events-none"></div>
              
-             <div className="absolute top-3 right-3 z-20 flex gap-2 opacity-0 group-hover:opacity-100 transition-all translate-y-[-10px] group-hover:translate-y-0">
-               <button onClick={() => handleEdit(photo)} className="p-2 backdrop-blur-md bg-black/50 border border-white/20 rounded-xl text-neutral-200 hover:text-indigo-400 hover:bg-black/80 transition-all shadow-xl">
-                 <Edit2 className="w-4 h-4" />
-               </button>
-               <button onClick={() => {
-                 if(confirm("Delete this proxy config?")) dbService.deletePhoto(photo.id);
-               }} className="p-2 backdrop-blur-md bg-black/50 border border-white/20 rounded-xl text-neutral-200 hover:text-red-400 hover:bg-black/80 transition-all shadow-xl">
-                 <Trash2 className="w-4 h-4" />
-               </button>
-             </div>
+             {!isSelecting && (
+               <div className="absolute top-3 right-3 z-20 flex gap-2 opacity-0 group-hover:opacity-100 transition-all translate-y-[-10px] group-hover:translate-y-0">
+                 <button onClick={(e) => { e.stopPropagation(); handleEdit(photo); }} className="p-2 backdrop-blur-md bg-black/50 border border-white/20 rounded-xl text-neutral-200 hover:text-indigo-400 hover:bg-black/80 transition-all shadow-xl">
+                   <Edit2 className="w-4 h-4" />
+                 </button>
+                 <button onClick={(e) => {
+                   e.stopPropagation();
+                   if(confirm("Delete this proxy config?")) dbService.deletePhoto(photo.id);
+                 }} className="p-2 backdrop-blur-md bg-black/50 border border-white/20 rounded-xl text-neutral-200 hover:text-red-400 hover:bg-black/80 transition-all shadow-xl">
+                   <Trash2 className="w-4 h-4" />
+                 </button>
+               </div>
+             )}
 
              <div className="absolute bottom-4 left-4 right-4 z-20 pointer-events-none flex flex-col justify-end">
                <div className="flex flex-wrap items-center gap-2 mb-1.5 opacity-0 group-hover:opacity-100 transition-opacity delay-100">

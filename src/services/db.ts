@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, setDoc, deleteDoc, query, orderBy, serverTimestamp, Timestamp, onSnapshot } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, setDoc, deleteDoc, query, orderBy, serverTimestamp, Timestamp, onSnapshot, writeBatch } from "firebase/firestore";
 import { db } from "../firebase";
 import { Category, Photo } from "../types";
 import { OperationType, handleFirestoreError } from "../lib/firestore-errors";
@@ -129,12 +129,11 @@ export const dbService = {
     }
   },
 
-  async bulkCreatePhotos(photos: Array<{ id: string, photo: Omit<Photo, 'id' | 'createdAt' | 'updatedAt'> }>): Promise<void> {
-    const { writeBatch } = await import('firebase/firestore');
-    
+  async bulkCreatePhotos(photos: Array<{ id: string, photo: Omit<Photo, 'id' | 'createdAt' | 'updatedAt'> }>, onProgress?: (done: number, total: number) => void): Promise<void> {
     // Firestore batches can hold up to 500 writes
     // We will chunk them into batches of 400
     const CHUNK_SIZE = 400;
+    let doneAmount = 0;
     for (let i = 0; i < photos.length; i += CHUNK_SIZE) {
       const batchChunk = photos.slice(i, i + CHUNK_SIZE);
       const batch = writeBatch(db);
@@ -150,6 +149,8 @@ export const dbService = {
       
       try {
         await batch.commit();
+        doneAmount += batchChunk.length;
+        if (onProgress) onProgress(doneAmount, photos.length);
       } catch (e) {
         handleFirestoreError(e, OperationType.CREATE, 'photos (bulk)');
       }
@@ -174,6 +175,25 @@ export const dbService = {
        await deleteDoc(doc(db, 'photos', id));
     } catch (e) {
       handleFirestoreError(e, OperationType.DELETE, p);
+    }
+  },
+
+  async bulkDeletePhotos(photoIds: string[], onProgress?: (done: number, total: number) => void): Promise<void> {
+    const CHUNK_SIZE = 400;
+    let doneAmount = 0;
+    for (let i = 0; i < photoIds.length; i += CHUNK_SIZE) {
+      const batchChunk = photoIds.slice(i, i + CHUNK_SIZE);
+      const batch = writeBatch(db);
+      for (const id of batchChunk) {
+        batch.delete(doc(db, 'photos', id));
+      }
+      try {
+        await batch.commit();
+        doneAmount += batchChunk.length;
+        if (onProgress) onProgress(doneAmount, photoIds.length);
+      } catch (e) {
+        handleFirestoreError(e, OperationType.DELETE, 'photos (bulk)');
+      }
     }
   }
 };

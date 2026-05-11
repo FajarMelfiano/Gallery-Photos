@@ -29,7 +29,10 @@ async function startServer() {
       }
 
       // Drive URL to fetch the image view
-      const url = `https://drive.google.com/uc?export=view&id=${driveId}`;
+      let url = `https://drive.google.com/uc?export=view&id=${driveId}`;
+      if (req.query.w) {
+        url = `https://drive.google.com/thumbnail?id=${driveId}&sz=w${req.query.w}`;
+      }
 
       const response = await axios({
         method: "GET",

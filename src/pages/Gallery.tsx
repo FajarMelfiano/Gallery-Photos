@@ -87,7 +87,7 @@ export const Gallery: React.FC = () => {
           >
             <AnimatePresence>
               {filteredPhotos.map((photo, index) => {
-                const proxyUrl = `/api/photos/view/${photo.drive_id}`;
+                const proxyUrl = `/api/photos/view/${photo.drive_id}?w=800`;
                 
                 // Construct algorithmic grid span based on drive_id
                 let sum = 0;
